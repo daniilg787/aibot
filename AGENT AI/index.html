@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>AI Companion</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="AI Companion">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#181818">
+<meta name="description" content="Ваш персональный AI-ассистент">
+<meta name="application-name" content="AI Companion">
+
+<!-- PWA Manifest inline -->
+<link rel="manifest" href="manifest.json">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;height:100%;overflow:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);background:#181818}
+.screen{display:none;height:100vh;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+:root{
+  /* Telegram Dark palette */
+  --bg:#212121;
+  --bg2:#181818;
+  --bg3:#2b2b2b;
+  --bg4:#333333;
+  --text:#ffffff;
+  --text2:#aaaaaa;
+  --text3:#555555;
+  --border:rgba(255,255,255,0.06);
+  --border2:rgba(255,255,255,0.1);
+  /* Telegram accent blue */
+  --purple:#5288c1;
+  --purple-dark:#2b5278;
+  --purple-light:rgba(82,136,193,0.15);
+  --purple-text:#71a8d8;
+  --green:#4dcd5e;
+  --green-bg:rgba(77,205,94,0.12);
+  --red:#e55252;
+  --red-bg:rgba(229,82,82,0.12);
+  --amber:#f5a623;
+  --amber-bg:rgba(245,166,35,0.12);
+  /* Telegram message bubbles */
+  --bubble-out:#2b5278;
+  --bubble-in:#2b2b2b;
+}
+.btn-primary{background:var(--purple-dark);border:none;color:#fff;font-size:16px;font-weight:600;padding:15px;border-radius:14px;cursor:pointer;width:100%}
+.page-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--bg);flex-shrink:0}
+.back-btn{background:none;border:none;font-size:22px;color:var(--text2);cursor:pointer;line-height:1}
+.page-title{font-size:16px;font-weight:600;color:var(--text)}
+.scrollable{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px}
+.navbar{display:flex;background:var(--bg);border-top:1px solid var(--border);padding:10px 0;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));flex-shrink:0}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+.nav-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.nav-label{font-size:10px;font-weight:500}
+.nav-dot{width:4px;height:4px;border-radius:2px;background:var(--purple)}
+
+/* SPLASH */
+#splash{background:#181818;align-items:center;justify-content:center;gap:24px;padding:40px 24px}
+
+/* OB */
+#onboarding{background:#181818;align-items:center;justify-content:space-between;padding:60px 24px 40px}
+.ob-dot{height:4px;border-radius:2px;background:rgba(255,255,255,0.15);transition:all .3s}
+.ob-dot.on{background:var(--purple)}
+
+/* CHAT */
+#chat{background:var(--bg)}
+.chat-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--bg);flex-shrink:0}
+.avatar{width:38px;height:38px;border-radius:19px;background:var(--purple-light);border:1px solid rgba(127,119,221,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.messages{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--bg2);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.msg{max-width:78%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word}
+.msg.bot{background:var(--bubble-in);border:none;align-self:flex-start;border-bottom-left-radius:4px;color:var(--text)}
+.msg.user{background:var(--bubble-out);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.msg.file{background:var(--bubble-in);border:none;align-self:flex-end;border-radius:12px;display:flex;align-items:center;gap:10px;padding:10px 14px;max-width:70%}
+.typing{display:flex;gap:5px;align-items:center;padding:12px 14px;background:var(--bubble-in);border:none;border-radius:18px;border-bottom-left-radius:4px;width:fit-content}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(127,119,221,0.6);animation:bounce .8s infinite}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.limit-bar{margin:6px 12px 0;border-radius:8px;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.chat-input{padding:8px 10px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--border);display:flex;gap:5px;align-items:center;flex-shrink:0}
+.chat-input input{flex:1;border:none;border-radius:22px;padding:9px 14px;font-size:15px;background:var(--bg3);color:var(--text);outline:none;-webkit-appearance:none;min-width:0}
+.chat-input input::placeholder{color:var(--text3)}
+.icon-btn{width:36px;height:36px;border-radius:18px;border:none;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:var(--text2)}
+
+/* VOICE */
+#voice{background:#181818;align-items:center;justify-content:space-between;padding:30px 24px;padding-top:calc(30px + env(safe-area-inset-top,0px))}
+.wave{display:flex;gap:4px;align-items:center;height:50px}
+.wave-bar{width:4px;border-radius:2px;background:var(--purple);animation:wave-anim 1.2s ease-in-out infinite}
+@keyframes wave-anim{0%,100%{transform:scaleY(0.4)}50%{transform:scaleY(1)}}
+.wave-bar:nth-child(1){animation-delay:0s}.wave-bar:nth-child(2){animation-delay:.1s}
+.wave-bar:nth-child(3){animation-delay:.2s}.wave-bar:nth-child(4){animation-delay:.3s}
+.wave-bar:nth-child(5){animation-delay:.4s}.wave-bar:nth-child(6){animation-delay:.3s}
+.wave-bar:nth-child(7){animation-delay:.2s}.wave-bar:nth-child(8){animation-delay:.1s}
+
+/* PLANS */
+#plans{background:var(--bg)}
+.toggle-wrap{display:flex;background:var(--bg2);border-radius:12px;padding:4px;margin-bottom:16px}
+.toggle-opt{flex:1;padding:9px;border-radius:10px;text-align:center;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text2);transition:all .2s}
+.toggle-opt.on{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
+.plan-card{border-radius:16px;padding:16px;margin-bottom:10px;border:1px solid var(--border)}
+.plan-perk{font-size:13px;padding:3px 0;display:flex;gap:8px;align-items:center}
+
+/* TOKENSHOP */
+#tokenshop{background:var(--bg)}
+.topup-row{display:flex;justify-content:space-between;align-items:center;padding:13px 14px;border-radius:12px;border:1px solid var(--border2);background:var(--bg2);margin-bottom:8px;cursor:pointer}
+
+/* ADMIN */
+#admin{background:var(--bg2)}
+.admin-card{background:var(--bg);border-radius:14px;padding:14px 16px;margin-bottom:10px;border:1px solid var(--border)}
+.user-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.user-row:last-child{border-bottom:none}
+.user-av{width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.progress-bar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;flex:1;margin-top:3px}
+.progress-fill{height:100%;border-radius:3px}
+
+/* TOKENS */
+#tokens{background:var(--bg)}
+
+/* PROFILE */
+#profile{background:var(--bg)}
+.menu-row{display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.plan-switch-bar{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+
+input[type=range]{width:100%;accent-color:var(--purple)}
+button{-webkit-appearance:none}
+svg{display:block}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- SVG нейросеть иконка -->
+
+
+<div id="splash" class="screen active">
+  <div style="width:90px;height:90px;border-radius:26px;background:var(--purple-light);border:1px solid rgba(127,119,221,0.25);display:flex;align-items:center;justify-content:center;font-size:44px">🤖</div>
+  <div style="text-align:center">
+    <div style="font-size:28px;font-weight:700;color:var(--text)">AI Companion</div>
+    <div style="font-size:15px;color:var(--text2);margin-top:8px">Ваш персональный ИИ-ассистент</div>
+  </div>
+  <button style="background:var(--purple-dark);border:none;color:#fff;font-size:16px;font-weight:600;padding:15px 48px;border-radius:14px;cursor:pointer" onclick="show('onboarding')">Начать →</button>
+</div>
+
+<!-- ONBOARDING -->
+<div id="onboarding" class="screen" style="background:#181818;align-items:center;justify-content:space-between;padding:60px 24px 40px">
+  <div style="display:flex;gap:6px" id="ob-dots"></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center;width:100%;padding:20px 0" id="ob-content"></div>
+  <div style="width:100%;display:flex;flex-direction:column;gap:8px">
+    <button class="btn-primary" id="ob-btn" style="background:#2b5278;border:none;color:#fff;font-size:16px;font-weight:600;padding:15px;border-radius:14px;cursor:pointer;width:100%"></button>
+    <button style="background:transparent;border:none;color:#666666;font-size:14px;cursor:pointer;padding:10px" onclick="show('chat')">Пропустить</button>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div id="chat" class="screen">
+  <div class="chat-header">
+    <div class="avatar" id="chat-avatar" style="background:rgba(82,136,193,0.15);border:1px solid rgba(82,136,193,0.3);width:38px;height:38px;border-radius:19px;display:flex;align-items:center;justify-content:center">
+      <svg width="22" height="22" viewBox="0 0 80 80" fill="none"><line x1="14" y1="40" x2="40" y2="16" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round"/><line x1="14" y1="40" x2="40" y2="64" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round"/><line x1="40" y1="16" x2="66" y2="26" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round"/><line x1="40" y1="64" x2="66" y2="54" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round"/><line x1="66" y1="26" x2="66" y2="54" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round"/><circle cx="14" cy="40" r="5" fill="#5288c1"/><circle cx="40" cy="16" r="4.5" fill="#71a8d8"/><circle cx="40" cy="64" r="4.5" fill="#71a8d8"/><circle cx="66" cy="26" r="5" fill="#5288c1"/><circle cx="66" cy="54" r="5" fill="#5288c1"/></svg>
+    </div>
+    <div style="flex:1">
+      <div style="font-size:15px;font-weight:600;color:var(--text)">AI Companion</div>
+      <div style="font-size:11px;color:var(--green)">● онлайн</div>
+    </div>
+    <div id="plan-badge" onclick="show('plans')" style="font-size:10px;padding:4px 10px;border-radius:12px;background:var(--purple-light);color:var(--purple-text);font-weight:600;cursor:pointer;white-space:nowrap;border:1px solid rgba(127,119,221,0.2)"></div>
+  </div>
+  <div class="messages" id="messages">
+    <div class="msg bot">Привет! Я ваш персональный AI-ассистент. Чем могу помочь сегодня? 👋</div>
+    <div class="msg user">Проанализируй продажи за квартал</div>
+    <div class="msg bot">Конечно! Загрузите файл или вставьте данные — сделаю полный анализ с выводами.</div>
+    <div style="align-self:flex-start"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+  </div>
+  <div class="limit-bar" id="limit-bar">
+    <span style="font-size:11px;font-weight:500" id="limit-text"></span>
+    <span style="font-size:11px;color:var(--purple);font-weight:600;cursor:pointer" onclick="show('tokens')">Детали →</span>
+  </div>
+  <div class="chat-input">
+    <div class="icon-btn" onclick="show('voice')" style="color:var(--text2)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </div>
+    <div class="icon-btn" onclick="attachFile()" style="color:var(--text2)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+    </div>
+    <input type="text" id="chat-field" placeholder="Напишите сообщение..." onkeydown="if(event.key==='Enter')sendMsg()">
+    <div onclick="sendMsg()" style="width:36px;height:36px;border-radius:18px;background:var(--purple);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+    </div>
+  </div>
+  <div class="navbar" id="nav-chat"></div>
+</div>
+
+<!-- VOICE -->
+<div id="voice" class="screen">
+  <div style="width:100%;display:flex;justify-content:space-between;align-items:center">
+    <button onclick="show('chat')" style="background:none;border:none;font-size:24px;color:var(--text2);cursor:pointer">←</button>
+    <span style="font-size:14px;color:var(--text2);font-weight:500">Голосовой режим</span>
+    <div style="width:30px"></div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:22px">
+    <div style="position:relative;width:160px;height:160px;display:flex;align-items:center;justify-content:center">
+      <div style="position:absolute;width:160px;height:160px;border-radius:80px;background:rgba(127,119,221,0.06)"></div>
+      <div style="position:absolute;width:128px;height:128px;border-radius:64px;background:rgba(127,119,221,0.1)"></div>
+      <div style="position:absolute;width:100px;height:100px;border-radius:50px;background:rgba(127,119,221,0.16)"></div>
+      <div style="width:76px;height:76px;border-radius:50%;background:rgba(82,136,193,0.2);border:1px solid rgba(82,136,193,0.3);display:flex;align-items:center;justify-content:center;position:relative;z-index:1" id="voice-icon">
+        <svg width="40" height="40" viewBox="0 0 80 80" fill="none"><line x1="14" y1="40" x2="40" y2="16" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round"/><line x1="14" y1="40" x2="40" y2="64" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round"/><line x1="40" y1="16" x2="66" y2="26" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round"/><line x1="40" y1="64" x2="66" y2="54" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round"/><line x1="66" y1="26" x2="66" y2="54" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round"/><circle cx="14" cy="40" r="5" fill="#5288c1"/><circle cx="40" cy="16" r="4.5" fill="#71a8d8"/><circle cx="40" cy="64" r="4.5" fill="#71a8d8"/><circle cx="66" cy="26" r="5" fill="#5288c1"/><circle cx="66" cy="54" r="5" fill="#5288c1"/></svg>
+      </div>
+    </div>
+    <div class="wave">
+      <div class="wave-bar" style="height:18px"></div><div class="wave-bar" style="height:34px"></div>
+      <div class="wave-bar" style="height:44px"></div><div class="wave-bar" style="height:28px"></div>
+      <div class="wave-bar" style="height:40px"></div><div class="wave-bar" style="height:24px"></div>
+      <div class="wave-bar" style="height:44px"></div><div class="wave-bar" style="height:20px"></div>
+    </div>
+    <div style="font-size:18px;font-weight:600;color:var(--text)">Слушаю вас...</div>
+    <div style="font-size:13px;color:var(--text2)">Русский и английский</div>
+  </div>
+  <div style="width:100%;display:flex;flex-direction:column;gap:12px">
+    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:14px;width:100%;min-height:60px"><span style="font-size:13px;color:var(--text3);font-style:italic">Распознанный текст появится здесь...</span></div>
+    <button onclick="show('chat')" style="width:100%;padding:14px;border-radius:24px;background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-size:14px;cursor:pointer">Завершить</button>
+  </div>
+</div>
+
+<!-- PLANS -->
+<div id="plans" class="screen">
+  <div class="page-header">
+    <button class="back-btn" onclick="show('chat')">←</button>
+    <span class="page-title">Тарифы</span>
+  </div>
+  <div class="scrollable">
+    <div style="background:var(--amber-bg);border:1px solid rgba(239,159,39,0.2);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--amber)">
+      🧪 <strong>Режим теста:</strong> переключите тариф чтобы увидеть как меняется интерфейс
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:16px">
+      <button onclick="switchPlan('start')" id="sw-start" style="flex:1;padding:8px 4px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border2);color:var(--text2);background:var(--bg2)">Старт</button>
+      <button onclick="switchPlan('pro')"   id="sw-pro"   style="flex:1;padding:8px 4px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border2);color:var(--text2);background:var(--bg2)">Про</button>
+      <button onclick="switchPlan('biz')"   id="sw-biz"   style="flex:1;padding:8px 4px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border2);color:var(--text2);background:var(--bg2)">Бизнес</button>
+      <button onclick="switchPlan('staff')" id="sw-staff" style="flex:1;padding:8px 4px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border2);color:var(--text2);background:var(--bg2)">⚡Beta</button>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;text-align:center">🎁 7 дней бесплатно · Отмена в любое время</div>
+    <div class="toggle-wrap">
+      <button class="toggle-opt on" id="tog-m" onclick="setTog('month')">Месяц</button>
+      <button class="toggle-opt"    id="tog-y" onclick="setTog('year')">Год −15%</button>
+    </div>
+    <!-- Старт -->
+    <div class="plan-card" style="background:var(--bg2);border-color:var(--border2)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><div style="font-size:16px;font-weight:700;color:var(--text)">Старт</div><div style="font-size:12px;color:var(--text2);margin-top:2px">100K запросов/мес</div></div>
+        <div style="text-align:right"><div style="font-size:24px;font-weight:700;color:var(--text)" id="p-s">₽199</div><div style="font-size:11px;color:var(--text2)">/мес</div></div>
+      </div>
+      <div style="height:1px;background:var(--border);margin:10px 0"></div>
+      <div class="plan-perk" style="color:var(--text2)"><span>💬</span> ~77 диалогов/мес</div>
+      <div class="plan-perk" style="color:var(--text2)"><span>✏️</span> Текстовый чат</div>
+      <div class="plan-perk" style="color:var(--text2)"><span>⚡</span> Быстрые ответы</div>
+    </div>
+    <!-- Про -->
+    <div class="plan-card" style="background:var(--purple-dark);border-color:var(--purple)">
+      <div style="display:inline-block;font-size:10px;padding:2px 10px;border-radius:10px;background:rgba(255,255,255,0.15);color:#fff;margin-bottom:6px;font-weight:600">🔥 Популярный</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><div style="font-size:16px;font-weight:700;color:#fff">Про</div><div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px">3M запросов/мес</div></div>
+        <div style="text-align:right"><div style="font-size:24px;font-weight:700;color:#fff" id="p-p">₽1 990</div><div style="font-size:11px;color:rgba(255,255,255,0.5)">/мес</div></div>
+      </div>
+      <div style="height:1px;background:rgba(255,255,255,0.12);margin:10px 0"></div>
+      <div class="plan-perk" style="color:rgba(255,255,255,0.85)"><span>💬</span> ~2 300 диалогов/мес</div>
+      <div class="plan-perk" style="color:rgba(255,255,255,0.85)"><span>🎙️</span> Голос + текст</div>
+      <div class="plan-perk" style="color:rgba(255,255,255,0.85)"><span>📊</span> Аналитика и документы</div>
+      <div class="plan-perk" style="color:rgba(255,255,255,0.85)"><span>⚡</span> Приоритетный ответ</div>
+    </div>
+    <!-- Бизнес -->
+    <div class="plan-card" style="background:var(--bg2);border-color:rgba(127,119,221,0.3)">
+      <div style="display:inline-block;font-size:10px;padding:2px 10px;border-radius:10px;background:var(--purple-light);color:var(--purple-text);margin-bottom:6px;font-weight:600;border:1px solid rgba(127,119,221,0.2)">🏢 Для команд</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><div style="font-size:16px;font-weight:700;color:var(--text)">Бизнес</div><div style="font-size:12px;color:var(--text2);margin-top:2px">10M запросов/мес</div></div>
+        <div style="text-align:right"><div style="font-size:24px;font-weight:700;color:var(--text)" id="p-b">₽12 990</div><div style="font-size:11px;color:var(--text2)">/мес</div></div>
+      </div>
+      <div style="height:1px;background:var(--border);margin:10px 0"></div>
+      <div class="plan-perk" style="color:var(--text2)"><span>💬</span> ~7 700 диалогов/мес</div>
+      <div class="plan-perk" style="color:var(--text2)"><span>👥</span> До 10 пользователей</div>
+      <div class="plan-perk" style="color:var(--text2)"><span>🛡️</span> Панель администратора</div>
+      <div class="plan-perk" style="color:var(--text2)"><span>✨</span> Максимальное качество</div>
+      <div class="plan-perk" style="color:var(--text2)"><span>🔌</span> API-доступ</div>
+      <div class="plan-perk" style="color:var(--text2)"><span>🪙</span> Докупка токенов</div>
+    </div>
+    <!-- Докупка -->
+    <div style="background:var(--bg2);border-radius:14px;padding:14px 16px;margin-bottom:10px;border:1px solid var(--border2)">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">🪙 Докупка токенов (тариф Бизнес)</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div onclick="show('tokenshop')" class="topup-row"><div><div style="font-size:13px;color:var(--text);font-weight:500">+1M запросов</div><div style="font-size:11px;color:var(--text2);margin-top:2px">~770 диалогов</div></div><div style="font-size:14px;font-weight:600;color:var(--purple)">₽1 500 ›</div></div>
+        <div onclick="show('tokenshop')" class="topup-row"><div><div style="font-size:13px;color:var(--text);font-weight:500">+3M запросов</div><div style="font-size:11px;color:var(--text2);margin-top:2px">~2 300 диалогов</div></div><div style="font-size:14px;font-weight:600;color:var(--purple)">₽3 900 ›</div></div>
+        <div onclick="show('tokenshop')" class="topup-row"><div><div style="font-size:13px;color:var(--text);font-weight:500">+10M запросов</div><div style="font-size:11px;color:var(--text2);margin-top:2px">~7 700 диалогов</div></div><div style="font-size:14px;font-weight:600;color:var(--purple)">₽11 000 ›</div></div>
+        <div onclick="show('tokenshop')" class="topup-row"><div><div style="font-size:13px;color:var(--text);font-weight:500">+50M запросов</div><div style="font-size:11px;color:var(--text2);margin-top:2px">~38 000 диалогов</div></div><div style="font-size:14px;font-weight:600;color:var(--purple)">₽49 000 ›</div></div>
+      </div>
+    </div>
+    <button class="btn-primary" style="margin-top:4px">Попробовать 7 дней бесплатно</button>
+    <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:10px;padding-bottom:8px">Оплата через ЮKassa · Без скрытых платежей</div>
+  </div>
+  <div class="navbar" id="nav-plans"></div>
+</div>
+
+<!-- TOKENSHOP -->
+<div id="tokenshop" class="screen">
+  <div class="page-header">
+    <button class="back-btn" onclick="show('tokens')">←</button>
+    <span class="page-title">Докупить запросы</span>
+  </div>
+  <div class="scrollable">
+    <div style="background:var(--purple-light);border-radius:12px;padding:12px 14px;margin-bottom:16px;display:flex;gap:12px;align-items:center;border:1px solid rgba(127,119,221,0.2)">
+      <div style="font-size:24px">🪙</div>
+      <div><div style="font-size:13px;font-weight:600;color:var(--purple-text)">Тариф Бизнес · активен</div><div style="font-size:12px;color:var(--text2);margin-top:2px">Текущий остаток: 2.7M запросов</div></div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">Выберите пакет</div>
+    <div id="topup-list"></div>
+    <div style="background:var(--bg2);border-radius:10px;padding:12px 14px;margin-top:8px;font-size:12px;color:var(--text2);line-height:1.6;border:1px solid var(--border)">
+      💳 Оплата через ЮKassa · Зачисление мгновенно · Без срока действия
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin" class="screen">
+  <div class="page-header">
+    <button class="back-btn" onclick="show('profile')">←</button>
+    <span class="page-title">Панель администратора</span>
+    <div style="margin-left:auto;font-size:10px;padding:3px 10px;border-radius:10px;background:var(--purple-light);color:var(--purple-text);font-weight:600;border:1px solid rgba(127,119,221,0.2)">Бизнес</div>
+  </div>
+  <div class="scrollable">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="admin-card" style="margin-bottom:0">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Использовано</div>
+        <div style="font-size:22px;font-weight:700;color:var(--purple)">7.3M</div>
+        <div style="font-size:11px;color:var(--text2)">из 10M запросов</div>
+        <div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:73%;background:var(--purple)"></div></div>
+      </div>
+      <div class="admin-card" style="margin-bottom:0">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Пользователи</div>
+        <div style="font-size:22px;font-weight:700;color:var(--green)">6 / 10</div>
+        <div style="font-size:11px;color:var(--text2)">активных слотов</div>
+        <div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:60%;background:var(--green)"></div></div>
+      </div>
+    </div>
+    <div class="admin-card" style="margin-bottom:12px;background:var(--amber-bg);border-color:rgba(239,159,39,0.2)">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:4px">До сброса лимита</div>
+      <div style="font-size:18px;font-weight:700;color:var(--text)">14 дней</div>
+      <div style="font-size:11px;color:var(--amber);margin-top:2px">⚠️ При текущем темпе лимит закончится раньше</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:600;color:var(--text)">Участники команды</div>
+      <button onclick="alert('📧 Введите email сотрудника')" style="font-size:12px;color:var(--purple);background:none;border:none;cursor:pointer;font-weight:600">+ Добавить</button>
+    </div>
+    <div class="admin-card">
+      <div class="user-row">
+        <div class="user-av" style="background:var(--purple-dark)">АИ</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500;color:var(--text)">Алексей Иванов <span style="font-size:10px;background:var(--green-bg);color:var(--green);padding:1px 6px;border-radius:8px;margin-left:4px">Админ</span></div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">alex@company.ru</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px"><div class="progress-bar"><div class="progress-fill" style="width:82%;background:var(--amber)"></div></div><span style="font-size:10px;color:var(--amber);white-space:nowrap">82%</span></div>
+        </div>
+      </div>
+      <div class="user-row">
+        <div class="user-av" style="background:#1D9E75">МС</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Мария Смирнова</div><div style="font-size:11px;color:var(--text2);margin-top:2px">maria@company.ru</div><div style="display:flex;align-items:center;gap:6px;margin-top:4px"><div class="progress-bar"><div class="progress-fill" style="width:45%;background:var(--green)"></div></div><span style="font-size:10px;color:var(--text2);white-space:nowrap">45%</span></div></div>
+        <div style="font-size:18px;color:var(--text3)">›</div>
+      </div>
+      <div class="user-row">
+        <div class="user-av" style="background:var(--red)">ДК</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Дмитрий Козлов</div><div style="font-size:11px;color:var(--text2);margin-top:2px">d.kozlov@company.ru</div><div style="display:flex;align-items:center;gap:6px;margin-top:4px"><div class="progress-bar"><div class="progress-fill" style="width:91%;background:var(--red)"></div></div><span style="font-size:10px;color:var(--red);white-space:nowrap;font-weight:600">91% ⚠️</span></div></div>
+        <div style="font-size:18px;color:var(--text3)">›</div>
+      </div>
+      <div class="user-row">
+        <div class="user-av" style="background:var(--purple)">ОП</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Ольга Петрова</div><div style="font-size:11px;color:var(--text2);margin-top:2px">o.petrova@company.ru</div><div style="display:flex;align-items:center;gap:6px;margin-top:4px"><div class="progress-bar"><div class="progress-fill" style="width:28%;background:var(--purple)"></div></div><span style="font-size:10px;color:var(--text2);white-space:nowrap">28%</span></div></div>
+        <div style="font-size:18px;color:var(--text3)">›</div>
+      </div>
+      <div class="user-row">
+        <div class="user-av" style="background:var(--amber)">НВ</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Николай Волков</div><div style="font-size:11px;color:var(--text2);margin-top:2px">n.volkov@company.ru</div><div style="display:flex;align-items:center;gap:6px;margin-top:4px"><div class="progress-bar"><div class="progress-fill" style="width:60%;background:var(--amber)"></div></div><span style="font-size:10px;color:var(--text2);white-space:nowrap">60%</span></div></div>
+        <div style="font-size:18px;color:var(--text3)">›</div>
+      </div>
+      <div class="user-row">
+        <div class="user-av" style="background:var(--bg4)">ЕЛ</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Елена Лебедева</div><div style="font-size:11px;color:var(--text2);margin-top:2px">e.lebedeva@company.ru</div><div style="display:flex;align-items:center;gap:6px;margin-top:4px"><div class="progress-bar"><div class="progress-fill" style="width:12%;background:var(--text3)"></div></div><span style="font-size:10px;color:var(--text2);white-space:nowrap">12%</span></div></div>
+        <div style="font-size:18px;color:var(--text3)">›</div>
+      </div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin:12px 0 10px">Свободные слоты (4 из 10)</div>
+    <div class="admin-card" style="border:1px dashed var(--border2)">
+      <button onclick="alert('📧 Введите email сотрудника')" style="width:100%;background:none;border:none;cursor:pointer;padding:8px;display:flex;align-items:center;gap:12px">
+        <div style="width:36px;height:36px;border-radius:18px;border:1.5px dashed var(--border2);display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:20px">+</div>
+        <div style="text-align:left"><div style="font-size:13px;color:var(--purple);font-weight:600">Пригласить участника</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Отправить приглашение по email</div></div>
+      </button>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin:14px 0 10px">Автопополнение</div>
+    <div class="admin-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div><div style="font-size:13px;font-weight:500;color:var(--text)">При 20% остатка</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Автоматически докупить +3M</div></div>
+        <div onclick="toggleAuto()" id="auto-toggle" style="width:44px;height:24px;border-radius:12px;cursor:pointer;background:var(--green);position:relative;transition:background .2s;flex-shrink:0">
+          <div style="width:18px;height:18px;border-radius:9px;background:#fff;position:absolute;top:3px;left:23px;transition:left .2s"></div>
+        </div>
+      </div>
+      <button onclick="show('tokenshop')" style="width:100%;padding:11px;border-radius:10px;background:var(--purple-light);border:1px solid rgba(127,119,221,0.2);color:var(--purple-text);font-size:13px;font-weight:600;cursor:pointer">🪙 Докупить токены вручную</button>
+    </div>
+    <div style="padding-bottom:8px"></div>
+  </div>
+</div>
+
+<!-- TOKENS -->
+<div id="tokens" class="screen">
+  <div class="page-header">
+    <button class="back-btn" onclick="show('chat')">←</button>
+    <span class="page-title">Лимит запросов</span>
+  </div>
+  <div class="scrollable">
+    <div style="display:flex;flex-direction:column;align-items:center;padding:20px 0">
+      <svg width="150" height="150" viewBox="0 0 150 150" role="img" aria-label="73% лимита использовано">
+        <circle cx="75" cy="75" r="62" fill="none" stroke="#2b2b2b" stroke-width="12"/>
+        <circle cx="75" cy="75" r="62" fill="none" stroke="#5288c1" stroke-width="12" stroke-dasharray="284 400" stroke-linecap="round" transform="rotate(-90 75 75)"/>
+        <text x="75" y="70" text-anchor="middle" font-size="22" font-weight="700" fill="#ffffff">73%</text>
+        <text x="75" y="88" text-anchor="middle" font-size="12" fill="#aaaaaa">использовано</text>
+      </svg>
+      <div style="font-size:13px;color:var(--text2);margin-top:8px">730K из 1M запросов</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:4px">Сброс 1 мая 2026</div>
+    </div>
+    <div style="background:var(--amber-bg);border:1px solid rgba(239,159,39,0.2);border-radius:12px;padding:12px 14px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;color:var(--amber);margin-bottom:4px">⚠️ Осталось 27% лимита</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5">При текущем темпе лимит закончится через ~8 дней.</div>
+    </div>
+    <div id="tokens-actions"></div>
+  </div>
+  <div class="navbar" id="nav-tokens"></div>
+</div>
+
+<!-- PROFILE -->
+<div id="profile" class="screen">
+  <div class="page-header" style="flex-direction:column;align-items:flex-start;gap:14px">
+    <div style="font-size:16px;font-weight:600;color:var(--text)">Профиль</div>
+    <div style="display:flex;gap:14px;align-items:center">
+      <div style="width:58px;height:58px;border-radius:29px;background:var(--purple-dark);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:700;flex-shrink:0;border:1px solid rgba(82,136,193,0.3)" id="profile-avatar-icon">А</div>
+      <div>
+        <div style="font-size:15px;font-weight:600;color:var(--text)">Алексей Иванов</div>
+        <div style="font-size:12px;color:var(--text2)">alex@example.com</div>
+        <div id="profile-plan-badge" style="display:inline-block;font-size:10px;padding:2px 10px;border-radius:10px;background:var(--purple-light);color:var(--purple-text);margin-top:4px;font-weight:600;border:1px solid rgba(127,119,221,0.2)"></div>
+      </div>
+    </div>
+  </div>
+  <div class="scrollable">
+    <div class="plan-switch-bar">
+      <div style="font-size:12px;color:var(--text2);font-weight:500">🧪 Тест тарифа:</div>
+      <div style="display:flex;gap:5px">
+        <button onclick="switchPlan('start')" id="psw-start" style="font-size:11px;padding:5px 10px;border-radius:8px;border:1px solid var(--border2);cursor:pointer;font-weight:600;color:var(--text2);background:var(--bg2)">Старт</button>
+        <button onclick="switchPlan('pro')"   id="psw-pro"   style="font-size:11px;padding:5px 10px;border-radius:8px;border:1px solid var(--border2);cursor:pointer;font-weight:600;color:var(--text2);background:var(--bg2)">Про</button>
+        <button onclick="switchPlan('biz')"   id="psw-biz"   style="font-size:11px;padding:5px 10px;border-radius:8px;border:1px solid var(--border2);cursor:pointer;font-weight:600;color:var(--text2);background:var(--bg2)">Бизнес</button>
+        <button onclick="switchPlan('staff')" id="psw-staff" style="font-size:11px;padding:5px 10px;border-radius:8px;border:1px solid var(--border2);cursor:pointer;font-weight:600;color:var(--text2);background:var(--bg2)">⚡Beta</button>
+      </div>
+    </div>
+    <div class="menu-row"><div style="font-size:20px;width:28px;text-align:center">📊</div><div style="flex:1"><div style="font-size:14px;color:var(--text)">Статистика</div><div style="font-size:12px;color:var(--text2)">730K / 1M запросов</div></div><div style="font-size:18px;color:var(--text3)">›</div></div>
+    <div class="menu-row" id="plans-menu-row" onclick="show('plans')"><div style="font-size:20px;width:28px;text-align:center">💳</div><div style="flex:1"><div style="font-size:14px;color:var(--text)">Подписка и оплата</div><div id="menu-plan-sub" style="font-size:12px;color:var(--text2)"></div></div><div style="font-size:18px;color:var(--text3)">›</div></div>
+    <div class="menu-row" id="admin-row" onclick="show('admin')" style="display:none"><div style="font-size:20px;width:28px;text-align:center">🛡️</div><div style="flex:1"><div style="font-size:14px;color:var(--text)">Панель администратора</div><div style="font-size:12px;color:var(--text2)">6 участников · 7.3M использовано</div></div><div style="font-size:18px;color:var(--text3)">›</div></div>
+    <div class="menu-row"><div style="font-size:20px;width:28px;text-align:center">🔔</div><div style="flex:1"><div style="font-size:14px;color:var(--text)">Уведомления</div><div style="font-size:12px;color:var(--text2)">Включены</div></div><div style="font-size:18px;color:var(--text3)">›</div></div>
+    <div class="menu-row"><div style="font-size:20px;width:28px;text-align:center">🔄</div><div style="flex:1"><div style="font-size:14px;color:var(--text)">Автопополнение</div><div style="font-size:12px;color:var(--red)">Выключено</div></div><div style="font-size:18px;color:var(--text3)">›</div></div>
+    <div class="menu-row"><div style="font-size:20px;width:28px;text-align:center">🌐</div><div style="flex:1"><div style="font-size:14px;color:var(--text)">Язык</div><div style="font-size:12px;color:var(--text2)">Русский</div></div><div style="font-size:18px;color:var(--text3)">›</div></div>
+    <div class="menu-row"><div style="font-size:20px;width:28px;text-align:center">🔒</div><div style="flex:1"><div style="font-size:14px;color:var(--text)">Безопасность</div></div><div style="font-size:18px;color:var(--text3)">›</div></div>
+    <div class="menu-row"><div style="font-size:20px;width:28px;text-align:center">❓</div><div style="flex:1"><div style="font-size:14px;color:var(--text)">Поддержка</div></div><div style="font-size:18px;color:var(--text3)">›</div></div>
+    <button style="width:100%;margin-top:16px;padding:13px;border-radius:12px;background:var(--red-bg);border:1px solid rgba(226,75,74,0.2);color:var(--red);font-size:14px;cursor:pointer;font-weight:500">Выйти из аккаунта</button>
+    <div style="padding-bottom:8px"></div>
+  </div>
+  <div class="navbar" id="nav-profile"></div>
+</div>
+
+<script>
+let curPlan='pro';
+const planNames  ={start:'Старт',pro:'Про',biz:'Бизнес',staff:'Beta'};
+const planPrices ={start:'₽199',pro:'₽1 990',biz:'₽12 990',staff:'₽0'};
+
+function switchPlan(p){
+  curPlan=p;
+  const isStaff=p==='staff';
+  const badge=document.getElementById('plan-badge');
+  badge.textContent=isStaff?'⚡ Beta':planNames[p]+' ▾';
+  badge.style.background=isStaff?'rgba(127,119,221,0.1)':'var(--purple-light)';
+  badge.style.color=isStaff?'#AFA9EC':'var(--purple-text)';
+  badge.onclick=isStaff?null:()=>show('plans');
+  badge.style.cursor=isStaff?'default':'pointer';
+  const pb=document.getElementById('profile-plan-badge');
+  pb.textContent=isStaff?'⚡ Beta — бесплатный доступ':'Тариф '+planNames[p];
+  pb.style.background=isStaff?'rgba(127,119,221,0.1)':'var(--purple-light)';
+  pb.style.color='var(--purple-text)';
+  document.getElementById('menu-plan-sub').textContent=isStaff?'Beta · бесплатно':planNames[p]+' · '+planPrices[p]+'/мес';
+  document.getElementById('plans-menu-row').style.display=isStaff?'none':'flex';
+  document.getElementById('admin-row').style.display=p==='biz'?'flex':'none';
+  const lb=document.getElementById('limit-bar');
+  lb.style.background=p==='start'?'var(--amber-bg)':'var(--green-bg)';
+  lb.style.border=p==='start'?'1px solid rgba(239,159,39,0.2)':'1px solid rgba(29,158,117,0.2)';
+  document.getElementById('limit-text').style.color=p==='start'?'var(--amber)':'var(--green)';
+  document.getElementById('limit-text').textContent=p==='start'?'⚠️ Использовано 73% лимита':p==='staff'?'⚡ Beta · 24% использовано':p==='pro'?'✅ Использовано 24% лимита':'✅ Использовано 12% лимита';
+  ['start','pro','biz','staff'].forEach(x=>{
+    [document.getElementById('sw-'+x),document.getElementById('psw-'+x)].forEach(b=>{
+      if(!b) return;
+      b.style.background=x===p?'var(--purple-dark)':'var(--bg2)';
+      b.style.color=x===p?'#fff':'var(--text2)';
+      b.style.borderColor=x===p?'var(--purple)':'var(--border2)';
+    });
+  });
+  renderStaffBanner();
+  renderTokensActions();
+}
+
+function renderStaffBanner(){
+  const ex=document.getElementById('staff-banner');
+  if(ex) ex.remove();
+  if(curPlan!=='staff') return;
+  const msgs=document.getElementById('messages');
+  const b=document.createElement('div');
+  b.id='staff-banner';
+  b.style.cssText='background:var(--purple-light);border:1px solid rgba(127,119,221,0.2);border-radius:12px;padding:10px 14px;display:flex;gap:10px;align-items:center;align-self:stretch;margin:0';
+  b.innerHTML='<div style="font-size:20px">⚡</div><div><div style="font-size:12px;font-weight:600;color:var(--purple-text)">Beta-доступ активен</div><div style="font-size:11px;color:var(--text2);margin-top:1px">Бесплатный доступ от разработчика</div></div>';
+  msgs.insertBefore(b,msgs.firstChild);
+}
+
+function renderTokensActions(){
+  const el=document.getElementById('tokens-actions');
+  if(!el) return;
+  if(curPlan==='biz'){
+    el.innerHTML=`
+      <div onclick="show('tokenshop')" class="topup-row" style="margin-bottom:8px"><span style="font-size:13px;color:var(--text)">Выбрать пакет токенов</span><span style="font-size:13px;font-weight:600;color:var(--purple)">🪙 Смотреть →</span></div>
+      <button onclick="show('admin')" style="width:100%;margin-top:4px;padding:12px;border-radius:12px;background:var(--purple-light);border:1px solid rgba(127,119,221,0.2);color:var(--purple-text);font-size:13px;font-weight:600;cursor:pointer">🛡️ Панель администратора</button>`;
+  } else {
+    el.innerHTML=`<button onclick="show('plans')" style="width:100%;padding:13px;border-radius:12px;background:var(--purple-dark);border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Перейти на тариф выше ›</button>`;
+  }
+}
+
+const topups=[
+  {label:'+1M запросов',sub:'~770 диалогов',price:'₽1 500',popular:false},
+  {label:'+3M запросов',sub:'~2 300 диалогов',price:'₽3 900',popular:true},
+  {label:'+10M запросов',sub:'~7 700 диалогов',price:'₽11 000',popular:false},
+  {label:'+50M запросов',sub:'~38 000 диалогов',price:'₽49 000',popular:false},
+];
+function renderTopups(){
+  const el=document.getElementById('topup-list');
+  if(!el) return;
+  el.innerHTML=topups.map(t=>`
+    <div class="topup-row" onclick="alert('✅ ${t.label} за ${t.price}\\nОплата через ЮKassa')">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px">
+          ${t.label}${t.popular?' <span style="font-size:10px;background:var(--purple-light);color:var(--purple-text);padding:1px 8px;border-radius:8px;font-weight:600;border:1px solid rgba(127,119,221,0.2)">Популярный</span>':''}
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">${t.sub}</div>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:var(--purple)">${t.price} ›</div>
+    </div>`).join('');
+}
+
+const navCfg=[
+  {id:'chat',   svg:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>', label:'Чат'},
+  {id:'plans',  svg:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>', label:'Тарифы'},
+  {id:'tokens', svg:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>', label:'Лимит'},
+  {id:'profile',svg:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>', label:'Профиль'},
+];
+const navScreens=['chat','plans','tokens','profile'];
+function buildNav(id){
+  navScreens.forEach(s=>{
+    const el=document.getElementById('nav-'+s);
+    if(!el) return;
+    el.innerHTML=navCfg.map(n=>{
+      const a=n.id===id;
+      return `<div class="nav-item" onclick="show('${n.id}')">
+        <div style="width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:${a?'#5288c1':'transparent'};color:${a?'#fff':'#888888'};margin-bottom:2px;transition:all .15s">
+          ${n.svg}
+        </div>
+        <div style="font-size:10px;font-weight:${a?600:400};color:${a?'#5288c1':'#888888'}">${n.label}</div>
+      </div>`;
+    }).join('');
+  });
+}
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  buildNav(id); renderTopups(); renderTokensActions();
+  const sc=document.getElementById(id)?.querySelector('.scrollable');
+  if(sc) sc.scrollTop=0;
+}
+
+let obStep=0;
+const obSlides=[
+  {icon:'',title:'Ваш личный AI-ассистент',desc:'Умный помощник для любых задач — аналитика, документы, голосовые запросы.'},
+  {icon:'🎤',title:'Голос и текст',desc:'Говорите или пишите — AI понимает оба формата. Русский и английский.'},
+  {icon:'📈',title:'Аналитика и документы',desc:'Загружайте файлы, получайте анализ, генерируйте отчёты прямо в чате.'},
+];
+function renderOb(){
+  document.getElementById('ob-dots').innerHTML=obSlides.map((_,i)=>
+    `<div style="height:4px;border-radius:2px;background:${i===obStep?'#5288c1':'rgba(255,255,255,0.2)'};width:${i===obStep?24:10}px;transition:all .3s"></div>`
+  ).join('');
+
+  const icons=[
+    getIconNN(),
+    getIconMic(),
+    getIconChart()
+  ];
+
+  const s=obSlides[obStep];
+  const wrap=document.getElementById('ob-content');
+  wrap.innerHTML='';
+
+  const iconDiv=document.createElement('div');
+  iconDiv.style.cssText='display:flex;align-items:center;justify-content:center;margin-bottom:8px';
+  iconDiv.appendChild(icons[obStep]);
+  wrap.appendChild(iconDiv);
+
+  const title=document.createElement('div');
+  title.style.cssText='font-size:22px;font-weight:700;color:#ffffff;margin-bottom:10px';
+  title.textContent=s.title;
+  wrap.appendChild(title);
+
+  const desc=document.createElement('div');
+  desc.style.cssText='font-size:15px;color:#888888;line-height:1.6;max-width:280px';
+  desc.textContent=s.desc;
+  wrap.appendChild(desc);
+
+  document.getElementById('ob-btn').textContent=obStep<2?'Далее →':'Начать бесплатно';
+}
+
+function makeSVG(w,h){
+  const s=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  s.setAttribute('width',w);s.setAttribute('height',h);
+  s.setAttribute('viewBox','0 0 80 80');s.setAttribute('fill','none');
+  return s;
+}
+function addEl(parent,tag,attrs){
+  const el=document.createElementNS('http://www.w3.org/2000/svg',tag);
+  Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));
+  parent.appendChild(el);return el;
+}
+function addAnim(el,from,to,dur,delay){
+  const a=document.createElementNS('http://www.w3.org/2000/svg','animate');
+  a.setAttribute('attributeName','r');
+  a.setAttribute('values',from+';'+to+';'+from);
+  a.setAttribute('dur',dur+'s');
+  a.setAttribute('begin',delay+'s');
+  a.setAttribute('repeatCount','indefinite');
+  el.appendChild(a);
+  const b=document.createElementNS('http://www.w3.org/2000/svg','animate');
+  b.setAttribute('attributeName','opacity');
+  b.setAttribute('values','0.5;1;0.5');
+  b.setAttribute('dur',dur+'s');
+  b.setAttribute('begin',delay+'s');
+  b.setAttribute('repeatCount','indefinite');
+  el.appendChild(b);
+}
+
+function getIconNN(){
+  const s=makeSVG(90,90);
+  const edges=[[13,40,40,15],[13,40,40,65],[40,15,67,25],[40,65,67,55],[67,25,67,55]];
+  const dashed=[[40,15,67,55],[40,65,67,25]];
+  edges.forEach(([x1,y1,x2,y2])=>addEl(s,'line',{x1,y1,x2,y2,stroke:'#5288c1','stroke-width':'2','stroke-linecap':'round'}));
+  dashed.forEach(([x1,y1,x2,y2])=>addEl(s,'line',{x1,y1,x2,y2,stroke:'#3a6a96','stroke-width':'1.5','stroke-linecap':'round','stroke-dasharray':'3 2.5'}));
+  const nodes=[{cx:13,cy:40,r:4,fill:'#5288c1',d:0},{cx:40,cy:15,r:4,fill:'#71a8d8',d:.4},{cx:40,cy:65,r:4,fill:'#71a8d8',d:.8},{cx:67,cy:25,r:4,fill:'#5288c1',d:1.2},{cx:67,cy:55,r:4,fill:'#5288c1',d:1.6}];
+  nodes.forEach(n=>{const c=addEl(s,'circle',{cx:n.cx,cy:n.cy,r:n.r,fill:n.fill});addAnim(c,n.r,n.r+2.5,2,n.d);});
+  addEl(s,'circle',{cx:40,cy:40,r:3,fill:'#1e3a5f',stroke:'#5288c1','stroke-width':'1.5'});
+  return s;
+}
+
+function getIconMic(){
+  const s=makeSVG(90,90);
+  addEl(s,'rect',{x:28,y:10,width:24,height:36,rx:12,fill:'#5288c1',opacity:'0.9'});
+  addEl(s,'path',{d:'M16 38c0 13.3 10.7 24 24 24s24-10.7 24-24',stroke:'#71a8d8','stroke-width':'3.5','stroke-linecap':'round'});
+  addEl(s,'line',{x1:40,y1:62,x2:40,y2:72,stroke:'#71a8d8','stroke-width':'3.5','stroke-linecap':'round'});
+  addEl(s,'line',{x1:28,y1:72,x2:52,y2:72,stroke:'#71a8d8','stroke-width':'3.5','stroke-linecap':'round'});
+  return s;
+}
+
+function getIconChart(){
+  const s=makeSVG(90,90);
+  addEl(s,'rect',{x:8,y:8,width:64,height:64,rx:10,fill:'rgba(82,136,193,0.1)',stroke:'#3a6a96','stroke-width':'1.5'});
+  [[18,58,18,30,'#5288c1'],[32,58,32,20,'#71a8d8'],[46,58,46,36,'#5288c1'],[60,58,60,24,'#71a8d8']].forEach(([x1,y1,x2,y2,c])=>
+    addEl(s,'line',{x1,y1,x2,y2,stroke:c,'stroke-width':'5','stroke-linecap':'round'}));
+  addEl(s,'line',{x1:12,y1:62,x2:68,y2:62,stroke:'#3a6a96','stroke-width':'2','stroke-linecap':'round'});
+  return s;
+}
+document.getElementById('ob-btn').onclick=()=>{if(obStep<2){obStep++;renderOb();}else show('chat');};
+renderOb();
+
+function setTog(m){
+  const y=m==='year';
+  document.getElementById('tog-m').classList.toggle('on',!y);
+  document.getElementById('tog-y').classList.toggle('on',y);
+  document.getElementById('p-s').textContent=y?'₽169':'₽199';
+  document.getElementById('p-p').textContent=y?'₽1 692':'₽1 990';
+  document.getElementById('p-b').textContent=y?'₽11 042':'₽12 990';
+}
+
+function sendMsg(){
+  const f=document.getElementById('chat-field');
+  const t=f.value.trim(); if(!t) return;
+  const m=document.getElementById('messages');
+  const d=document.createElement('div'); d.className='msg user'; d.textContent=t;
+  m.appendChild(d); f.value=''; m.scrollTop=m.scrollHeight;
+}
+function attachFile(){
+  const m=document.getElementById('messages');
+  const d=document.createElement('div'); d.className='msg file';
+  d.innerHTML='<div style="width:32px;height:32px;background:var(--purple-light);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px">📄</div><div><div style="font-size:13px;font-weight:500;color:var(--text)">отчёт_Q1.pdf</div><div style="font-size:11px;color:var(--text2)">245 KB</div></div>';
+  m.appendChild(d);
+  setTimeout(()=>{const r=document.createElement('div');r.className='msg bot';r.textContent='Файл получен! Анализирую данные...';m.appendChild(r);m.scrollTop=m.scrollHeight;},600);
+  m.scrollTop=m.scrollHeight;
+}
+
+let autoOn=true;
+function toggleAuto(){
+  autoOn=!autoOn;
+  const el=document.getElementById('auto-toggle');
+  el.style.background=autoOn?'var(--green)':'var(--bg4)';
+  el.querySelector('div').style.left=autoOn?'23px':'3px';
+}
+
+// Вставляем SVG иконки нейросети
+function injectIcons(){ /* иконки уже вшиты в HTML */ }
+injectIcons();
+switchPlan('pro');
+buildNav('chat');
+renderTopups();
+renderTokensActions();
+</script>
+</body>
+</html>

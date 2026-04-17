@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1a3a5c"/>
+      <stop offset="100%" stop-color="#0a1628"/>
+    </radialGradient>
+    <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#5288c1" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#5288c1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#71a8d8" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#71a8d8" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur1">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+    <filter id="blur2">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+
+  <!-- Фон -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- Внешнее свечение -->
+  <circle cx="256" cy="256" r="180" fill="url(#glow1)" filter="url(#blur2)"/>
+
+  <!-- Концентрические кольца -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#5288c1" stroke-width="1" opacity="0.15"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#5288c1" stroke-width="1" opacity="0.2"/>
+  <circle cx="256" cy="256" r="120" fill="none" stroke="#5288c1" stroke-width="1" opacity="0.25"/>
+  <circle cx="256" cy="256" r="80"  fill="none" stroke="#5288c1" stroke-width="1.5" opacity="0.3"/>
+
+  <!-- Узлы нейросети -->
+  <!-- Центр -->
+  <circle cx="256" cy="256" r="18" fill="#0a1628" stroke="#5288c1" stroke-width="3"/>
+  <circle cx="256" cy="256" r="10" fill="#5288c1"/>
+
+  <!-- Левый -->
+  <circle cx="96"  cy="256" r="14" fill="#0a1628" stroke="#5288c1" stroke-width="2.5"/>
+  <circle cx="96"  cy="256" r="7"  fill="#5288c1"/>
+
+  <!-- Верх-лево -->
+  <circle cx="156" cy="136" r="12" fill="#0a1628" stroke="#71a8d8" stroke-width="2.5"/>
+  <circle cx="156" cy="136" r="6"  fill="#71a8d8"/>
+
+  <!-- Верх-право -->
+  <circle cx="356" cy="136" r="14" fill="#0a1628" stroke="#5288c1" stroke-width="2.5"/>
+  <circle cx="356" cy="136" r="7"  fill="#5288c1"/>
+
+  <!-- Право -->
+  <circle cx="416" cy="256" r="12" fill="#0a1628" stroke="#71a8d8" stroke-width="2.5"/>
+  <circle cx="416" cy="256" r="6"  fill="#71a8d8"/>
+
+  <!-- Низ-лево -->
+  <circle cx="156" cy="376" r="14" fill="#0a1628" stroke="#5288c1" stroke-width="2.5"/>
+  <circle cx="156" cy="376" r="7"  fill="#5288c1"/>
+
+  <!-- Низ-право -->
+  <circle cx="356" cy="376" r="12" fill="#0a1628" stroke="#71a8d8" stroke-width="2.5"/>
+  <circle cx="356" cy="376" r="6"  fill="#71a8d8"/>
+
+  <!-- Верх -->
+  <circle cx="256" cy="96"  r="11" fill="#0a1628" stroke="#5288c1" stroke-width="2"/>
+  <circle cx="256" cy="96"  r="5"  fill="#5288c1" opacity="0.8"/>
+
+  <!-- Низ -->
+  <circle cx="256" cy="416" r="11" fill="#0a1628" stroke="#5288c1" stroke-width="2"/>
+  <circle cx="256" cy="416" r="5"  fill="#5288c1" opacity="0.8"/>
+
+  <!-- Линии — основные -->
+  <line x1="256" y1="256" x2="96"  y2="256" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+  <line x1="256" y1="256" x2="156" y2="136" stroke="#71a8d8" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+  <line x1="256" y1="256" x2="356" y2="136" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+  <line x1="256" y1="256" x2="416" y2="256" stroke="#71a8d8" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+  <line x1="256" y1="256" x2="156" y2="376" stroke="#5288c1" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+  <line x1="256" y1="256" x2="356" y2="376" stroke="#71a8d8" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+  <line x1="256" y1="256" x2="256" y2="96"  stroke="#5288c1" stroke-width="2"   stroke-linecap="round" opacity="0.7"/>
+  <line x1="256" y1="256" x2="256" y2="416" stroke="#5288c1" stroke-width="2"   stroke-linecap="round" opacity="0.7"/>
+
+  <!-- Линии — внешние связи -->
+  <line x1="96"  y1="256" x2="156" y2="136" stroke="#3a6a96" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.6"/>
+  <line x1="96"  y1="256" x2="156" y2="376" stroke="#3a6a96" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.6"/>
+  <line x1="156" y1="136" x2="356" y2="136" stroke="#3a6a96" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.6"/>
+  <line x1="156" y1="376" x2="356" y2="376" stroke="#3a6a96" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.6"/>
+  <line x1="356" y1="136" x2="416" y2="256" stroke="#3a6a96" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.6"/>
+  <line x1="356" y1="376" x2="416" y2="256" stroke="#3a6a96" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.6"/>
+  <line x1="156" y1="136" x2="256" y2="96"  stroke="#3a6a96" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.4"/>
+  <line x1="356" y1="136" x2="256" y2="96"  stroke="#3a6a96" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.4"/>
+  <line x1="156" y1="376" x2="256" y2="416" stroke="#3a6a96" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.4"/>
+  <line x1="356" y1="376" x2="256" y2="416" stroke="#3a6a96" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.4"/>
+
+  <!-- Свечение узлов (блюр-копии) -->
+  <circle cx="256" cy="256" r="18" fill="#5288c1" opacity="0.3" filter="url(#blur1)"/>
+  <circle cx="96"  cy="256" r="14" fill="#5288c1" opacity="0.25" filter="url(#blur1)"/>
+  <circle cx="356" cy="136" r="14" fill="#5288c1" opacity="0.25" filter="url(#blur1)"/>
+  <circle cx="156" cy="376" r="14" fill="#5288c1" opacity="0.25" filter="url(#blur1)"/>
+  <circle cx="156" cy="136" r="12" fill="#71a8d8" opacity="0.2" filter="url(#blur1)"/>
+  <circle cx="416" cy="256" r="12" fill="#71a8d8" opacity="0.2" filter="url(#blur1)"/>
+</svg>
