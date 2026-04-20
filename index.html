@@ -692,12 +692,66 @@ function setTog(m){
   document.getElementById('p-b').textContent=y?'₽11 042':'₽12 990';
 }
 
-function sendMsg(){
+const WORKER_URL = 'https://yandex-proxy.daniilg787.workers.dev';
+let chatHistory = [];
+
+async function sendMsg(){
   const f=document.getElementById('chat-field');
   const t=f.value.trim(); if(!t) return;
-  const m=document.getElementById('messages');
-  const d=document.createElement('div'); d.className='msg user'; d.textContent=t;
-  m.appendChild(d); f.value=''; m.scrollTop=m.scrollHeight;
+  const msgs=document.getElementById('messages');
+
+  // Сообщение пользователя
+  const userDiv=document.createElement('div');
+  userDiv.className='msg user';
+  userDiv.textContent=t;
+  msgs.appendChild(userDiv);
+  f.value='';
+  msgs.scrollTop=msgs.scrollHeight;
+
+  // Индикатор печатания
+  const typingDiv=document.createElement('div');
+  typingDiv.style.cssText='align-self:flex-start';
+  typingDiv.innerHTML='<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  msgs.appendChild(typingDiv);
+  msgs.scrollTop=msgs.scrollHeight;
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        message: t,
+        history: chatHistory
+      })
+    });
+    const data = await res.json();
+    typingDiv.remove();
+
+    if(data.error){
+      const errDiv=document.createElement('div');
+      errDiv.className='msg bot';
+      errDiv.textContent='Ошибка: '+data.error;
+      msgs.appendChild(errDiv);
+    } else {
+      // Добавляем в историю
+      chatHistory.push({role:'user', text:t});
+      chatHistory.push({role:'assistant', text:data.answer});
+      // Ограничиваем историю последними 10 сообщениями
+      if(chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+
+      const botDiv=document.createElement('div');
+      botDiv.className='msg bot';
+      botDiv.textContent=data.answer;
+      msgs.appendChild(botDiv);
+    }
+  } catch(err) {
+    typingDiv.remove();
+    const errDiv=document.createElement('div');
+    errDiv.className='msg bot';
+    errDiv.textContent='Не удалось подключиться к серверу. Проверьте интернет.';
+    msgs.appendChild(errDiv);
+  }
+  msgs.scrollTop=msgs.scrollHeight;
 }
 function attachFile(){
   const m=document.getElementById('messages');
